@@ -1,0 +1,17 @@
+{%extends 'base.html'%}
+{%block content%}
+<p align="center"> centro blokas</p>
+{%endblock%}
+{%block left%}
+<br>
+<h4>Vartotojo duomenys</h4>
+<hr>
+<p>Id: {{current_user.id}}</p>
+<p>Nickas: {{current_user.user_name}}</p>
+<p>Vardas: {{current_user.vardas}}</p>
+<p>Pavarde: {{current_user.pavarde}}</p>
+<p>El.pastas: {{current_user.el_pastas}}</p>
+{%endblock left%}
+{%block right%}
+<a href="{{url_for('new_record')}}">Suvesti biudzeta</a>
+{%endblock right%}

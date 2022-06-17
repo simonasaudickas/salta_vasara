@@ -1,0 +1,17 @@
+{%extends 'base.html'%}
+
+{%block content%}
+{%for irasas in visi_irasai%}
+<hr>
+{%if irasas.pajamos%}
+<p>Pajamos: {{irasas.suma}}</p>
+<p>Data:{{datetime.strftime(irasas.data, "%Y-%m-%d %H:%M:%S")}}</p>
+{%else%}
+<p>Islaidos: {{irasas.suma}}</p>
+<p>Data:{{datetime.strftime(irasas.data, "%Y-%m-%d %H:%M:%S")}}</p>
+{%endif%}
+<a href ="{{url_for('delete', id=irasas['id'])}}">Istrinti</a>
+<a href ="{{url_for('update', id=irasas['id'])}}">Redaguoti</a>
+
+{%endfor%}
+{%endblock%}
