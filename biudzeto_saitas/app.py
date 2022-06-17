@@ -2,7 +2,7 @@ import os
 from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DateTime
-from slaptazodziai import postgres
+#from slaptazodziai import postgres
 from datetime import datetime
 import forms
 from flask_bcrypt import Bcrypt
@@ -18,7 +18,7 @@ admin = Admin(app, name='Panele')
 
 #db configuration
 app.config['SECRET_KEY'] = '4654f5dfadsrfasdr54e6rae'
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:'+postgres+'@localhost:5433/kursas'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://postgres:postgres@localhost:5432/kursas'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -98,7 +98,7 @@ def registracija():
         db.session.add(vartotojas)
         db.session.commit()
         return redirect(url_for('index'))
-    return render_template('registruotis.html', d)
+    return render_template('registruotis.html', form=forma)
 
 
 @app.route('/prisijungti', methods=['GET', 'POST'])
@@ -188,4 +188,4 @@ def update(id):
 
 
 if __name__== '__main__':
-    app.run(host='127.0.0.1', port='8000', debug=True)
+    app.run(host='0.0.0.0', port='8001', debug=True)
