@@ -147,16 +147,16 @@ def profile():
 
 
 
-@app.route('/api/<slaptazodis>', methods=['GET'])
+@app.route('/<slaptazodis>/api', methods=['GET'])
 def api(slaptazodis):
     user = Vartotojas.query(slaptazodis)
-    all_records = Irasai.query.filter_by(vartotojas_id = user.id).all()
+    all_records = Irasai.query.filter_by(vartotojas_id=user.id).all()
     res = records_schema.dump(all_records)
     return jsonify(res)
 
 
 @app.route('/user', methods=['GET'])
-def api(slaptazodis):
+def vartotojo_api():
     user = Vartotojas.query.all()
     #all_records = Irasai.query.filter_by(vartotojas_id = user.id).all()
     res = records_schema.dump(user)
