@@ -147,7 +147,7 @@ def profile():
 
 
 
-@app.route('/<slaptazodis>/api', methods=['GET'])
+@app.route('/api/<slaptazodis>', methods=['GET'])
 def api(slaptazodis):
     user = Vartotojas.query(slaptazodis)
     all_records = Irasai.query.filter_by(vartotojas_id = user.id).all()
