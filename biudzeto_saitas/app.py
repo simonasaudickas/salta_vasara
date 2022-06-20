@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, url_for, request, redirect
+from flask import Flask, render_template, url_for, request, redirect, flash, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import DateTime
 #from slaptazodziai import postgres
@@ -7,14 +7,14 @@ from datetime import datetime
 import forms
 from flask_bcrypt import Bcrypt
 from flask_login import LoginManager, UserMixin, current_user, logout_user, login_user, login_required
-from flask_admin import Admin
-from flask_admin.contrib.sqla import ModelView
+#from flask_admin import Admin
+#from flask_admin.contrib.sqla import ModelView
+from flask_marshmallow import Marshmallow
+from marshmallow_sqlalchemy import SQLAlchemySchema
 
-
-basedir = os.path.abspath(os.path.dirname(__file__))
+#basedir = os.path.abspath(os.path.dirname(__file__))
 app= Flask(__name__)
 
-admin = Admin(app, name='Panele')
 
 #db configuration
 app.config['SECRET_KEY'] = '4654f5dfadsrfasdr54e6rae'
@@ -23,13 +23,15 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+ma = Marshmallow(app)
 
-login_manager=LoginManager(app)
+login_manager = LoginManager(app)
 login_manager.login_view = 'prisijungti'
 login_manager.login_message = 'info'
 login_manager.login_message = 'Prisijunkite, jei norite matyti puslapi'
-
+#admin = Admin(app, name='Panele')
 #create tables
+
 class Vartotojas(db.Model, UserMixin):
     __table_args__ = {"schema":"biudzetas"}
     __tablename__ = "useris"
@@ -40,7 +42,7 @@ class Vartotojas(db.Model, UserMixin):
     el_pastas = db.Column('email', db.String(50), unique=True, nullable=False)
     slaptazodis = db.Column('slaptazodis', db.String(60), unique=True, nullable=False)
 
-    #irsai_id = db.relationship('biudzeto_irasai', backref='useris')
+
 
 class Irasai(db.Model):
     __table_args__= {"schema":"biudzetas"}
@@ -52,25 +54,32 @@ class Irasai(db.Model):
     vartotojas_id = db.Column(db.Integer, db.ForeignKey('biudzetas.useris.id'))
     vartotojas = db.relationship("Vartotojas", lazy=True)
 
-class Darbuotojas(db.Model):
+"""class Darbuotojas(db.Model):
     __table_args__ = {"schema": "biudzetas"}
     __tablename__ = "darbuotojai"
     id = db.Column(db.Integer, primary_key=True)
     darbuotojas= db.Column('darbuotojas', db.Boolean, default=False)
     #vartotojo_id = db.Column('user_id',db.Integer)
     vartotojas_id = db.Column(db.Integer, db.ForeignKey('biudzetas.useris.id'))
-    vartotojas = db.relationship("Vartotojas", lazy=True)
+    vartotojas = db.relationship("Vartotojas", lazy=True)"""
 
-class Controller(ModelView):
-    def is_accessible(self):
-        if current_user == Darbuotojas(vartotojas_id=current_user.id.data):
-            return current_user.is_authenticated
-    def not_authorised(self):
-        return "Jus neturite prisijungimo teises"
 
-admin.add_view(Controller(Irasai, db.session))
-admin.add_view(Controller(Vartotojas, db.session))
-admin.add_view(Controller(Darbuotojas, db.session))
+class RecordSchema(ma.SQLAlchemyAutoSchema):
+    class Meta:
+        model = Irasai
+        include_fk = True
+
+record_schema =RecordSchema()
+records_schema = RecordSchema(many=True)
+
+
+
+@login_manager.user_loader
+def load_user(id):
+    try:
+        return Vartotojas.query.get(id)
+    except:
+        return None
 
 #routes in site
 @app.route('/')
@@ -81,10 +90,6 @@ def index():
     return render_template('home.html', menus=menus)
 
 
-@login_manager.user_loader
-def load_user(vartotojo_id):
-    db.create_all()
-    return Vartotojas.query.get(int(vartotojo_id))
 
 @app.route('/registruotis', methods=['GET', 'POST'])
 def registracija():
@@ -108,11 +113,15 @@ def prisijungti():
         return redirect(url_for('index'))
     form = forms.PrisijungimoForma()
     if form.validate_on_submit():
-        user = Vartotojas.query.filter_by(el_pastas = form.el_pastas.data).first()
+        user = Vartotojas.query.filter_by(el_pastas=form.el_pastas.data).first()
         if user and bcrypt.check_password_hash(user.slaptazodis, form.slaptazodis.data):
             login_user(user)
             next_page = request.args.get('next')
+            flash('sekmingai prisijungete', 'info')
             return redirect(next_page) if next_page else redirect(url_for('index'))
+        else:
+            flash('ivalid username or password', 'danger')
+
     return render_template('prisijungti.html', form=form, title = 'Prisijungti')
 
 @app.route("/atsijungti")
@@ -135,6 +144,14 @@ def new_record():
 @login_required
 def profile():
     return render_template('profile.html')
+
+
+
+@app.route('/api', methods=['GET'])
+def api():
+    all_records = Irasai.query.all()
+    res = records_schema.dump(all_records)
+    return jsonify(res)
 
 
 @app.route('/irasai')
@@ -188,4 +205,4 @@ def update(id):
 
 
 if __name__== '__main__':
-    app.run(host='0.0.0.0', port='8001', debug=True)
+    app.run(host='0.0.0.0', port='8000', debug=True)
